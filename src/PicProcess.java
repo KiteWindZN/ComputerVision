@@ -79,12 +79,46 @@ public class PicProcess {
 		}
 		return bi;
 	}
-	/*添加高斯噪声
+	/*添加高斯噪声,存在问题
 	 * */
 	public BufferedImage addGussisNoise(BufferedImage image){
 		BufferedImage bi=image;
+		double noise=Math.random()*8;
+		int width=image.getWidth();
+		int height=image.getHeight();
+		for(int i=0;i<height;i++){
+			for(int j=0;j<width;j++){
+				noise=Math.random()*4;
+				if(Math.random()>0.5)
+					noise*=-1;
+				bi.setRGB(i, j, bi.getRGB(i, j)+(int)noise);
+			}
+		}
 		return bi;
 	}
+	/*均值,有问题
+	 * */
+	public BufferedImage avgImage(BufferedImage image){
+		BufferedImage bi=image;
+		int width=image.getWidth();
+		int height=image.getHeight();
+		int row=1;
+		int col=1;
+		for(int i=row;i<height-row;i++){
+			for(int j=col;j<width-col;j++){
+				int ret=0;
+				
+				ret=(int) (bi.getRGB(i-1, j-1)*0.1+bi.getRGB(i-1, j)*0.15+bi.getRGB(i-1, j+1)*0.1);
+				ret+=bi.getRGB(i, j-1)*0.1+bi.getRGB(i, j)*0.15+bi.getRGB(i, j+1)*0.1;
+				ret+=bi.getRGB(i+1, j-1)*0.1+bi.getRGB(i+1, j)*0.15+bi.getRGB(i+1, j+1)*0.1;
+				
+				//ret=ret/((2*row+1)*(2*col+1));
+				bi.setRGB(i, j, ret);
+			}
+		}
+		return bi;
+	}
+	
 	/*边缘提取
 	 * */
 	public BufferedImage edgeDetect(BufferedImage image){
@@ -98,9 +132,9 @@ public class PicProcess {
 		// TODO Auto-generated method stub
 
 		PicProcess myObj = new PicProcess();
-		BufferedImage image=myObj.readImage("./image/flower.jpg");
-		BufferedImage bi=myObj.addSaltNoise(image);
-		myObj.createImage(bi, "./image/saltFlower.png");
+		BufferedImage image=myObj.readImage("./image/flower1.jpg");
+		BufferedImage bi=myObj.avgImage(image);
+		myObj.createImage(bi, "./image/avgFlower1.png");
 		System.out.println("the end of program");
 	}
 
