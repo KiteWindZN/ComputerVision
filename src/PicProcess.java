@@ -10,11 +10,14 @@ import javax.imageio.stream.ImageOutputStream;
 
 public class PicProcess {
 	int threadhold=128;
+	/*加载图片
+	 * */
 	public BufferedImage readImage(String fileName) throws IOException {
 		BufferedImage bi = ImageIO.read(new File(fileName));
 		return bi;
 	}
-
+    /*图像二值化
+     * */
 	public BufferedImage binaryImage(BufferedImage image){
 		int width=image.getWidth();
 		int height=image.getHeight();
@@ -38,7 +41,8 @@ public class PicProcess {
 		}
 		return bi;
 	}
-	
+	/*生成图片
+	 * */
 	public void createImage(BufferedImage image,String imagePath) throws IOException{
 		Iterator<ImageWriter> it = ImageIO.getImageWritersByFormatName("png");
 		ImageWriter writer = it.next();
@@ -50,7 +54,8 @@ public class PicProcess {
 		ios.flush();
 		ios.close();
 	}
-	
+	/*添加椒盐噪声 saltNoise
+	 * */
 	public BufferedImage addSaltNoise(BufferedImage image){
 		int width=image.getWidth();
 		int height=image.getHeight();
@@ -74,12 +79,14 @@ public class PicProcess {
 		}
 		return bi;
 	}
-	
+	/*添加高斯噪声
+	 * */
 	public BufferedImage addGussisNoise(BufferedImage image){
 		BufferedImage bi=image;
 		return bi;
 	}
-	
+	/*边缘提取
+	 * */
 	public BufferedImage edgeDetect(BufferedImage image){
 		int width=image.getWidth();
 		int height=image.getHeight();
