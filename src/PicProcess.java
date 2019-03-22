@@ -10,6 +10,8 @@ import javax.imageio.stream.ImageOutputStream;
 
 public class PicProcess {
 	int threadhold=128;
+	int row=1;
+	int col=1;
 	/*加载图片
 	 * */
 	public BufferedImage readImage(String fileName) throws IOException {
@@ -79,22 +81,35 @@ public class PicProcess {
 		}
 		return bi;
 	}
-	/*添加高斯噪声,存在问题
+	/*添加高斯噪声,存在问题==>>已解决
 	 * */
-	public BufferedImage addGussisNoise(BufferedImage image){
+	public BufferedImage addGaussianNoise(BufferedImage image){
 		BufferedImage bi=image;
 		double noise=Math.random()*8;
 		int width=image.getWidth();
 		int height=image.getHeight();
+		int[] rgb=new int[3];
 		for(int i=0;i<height;i++){
 			for(int j=0;j<width;j++){
-				noise=Math.random()*4;
+				noise=Math.random()*32;
 				if(Math.random()>0.5)
 					noise*=-1;
-				bi.setRGB(i, j, bi.getRGB(i, j)+(int)noise);
+				int pixel = bi.getRGB(i, j);
+				rgb[0] = (pixel & 0xff0000) >> 16;
+				rgb[1] = (pixel & 0xff00) >> 8;
+				rgb[2] = (pixel & 0xff);
+				rgb[0]=clamp(rgb[0]+(int)noise);
+				rgb[1]=clamp(rgb[1]+(int)noise);
+				rgb[2]=clamp(rgb[2]+(int)noise);
+				
+				bi.setRGB(i, j, new Color(rgb[0],rgb[1],rgb[2]).getRGB());
 			}
 		}
 		return bi;
+	}
+	
+	public int clamp(int p){
+		return p>255?255:(p<0?0:p);
 	}
 	/*均值,有问题
 	 * */
@@ -102,21 +117,90 @@ public class PicProcess {
 		BufferedImage bi=image;
 		int width=image.getWidth();
 		int height=image.getHeight();
-		int row=1;
-		int col=1;
+		
+		int[] rgb=new int[3];
 		for(int i=row;i<height-row;i++){
 			for(int j=col;j<width-col;j++){
-				int ret=0;
-				
-				ret=(int) (bi.getRGB(i-1, j-1)*0.1+bi.getRGB(i-1, j)*0.15+bi.getRGB(i-1, j+1)*0.1);
-				ret+=bi.getRGB(i, j-1)*0.1+bi.getRGB(i, j)*0.15+bi.getRGB(i, j+1)*0.1;
-				ret+=bi.getRGB(i+1, j-1)*0.1+bi.getRGB(i+1, j)*0.15+bi.getRGB(i+1, j+1)*0.1;
-				
-				//ret=ret/((2*row+1)*(2*col+1));
-				bi.setRGB(i, j, ret);
+				rgb=getAvgColor1(bi,i,j);
+				bi.setRGB(i, j, new Color(rgb[0],rgb[1],rgb[2]).getRGB());
 			}
 		}
 		return bi;
+	}
+	
+	public int[] getAvgColor1(BufferedImage bi, int i,int j){
+		int[] rgb=new int[3];
+		float totalWeight=0;
+		float weight=0;
+		for(int h=i-row;h<=i+row;h++){
+			for(int g=j-col;g<=j+col;g++){
+				if(h==i&&g==j)
+					continue;
+				weight=(float) Math.sqrt(1.0/((h-i)*(h-i)+(g-j)*(g-j)));
+				int pixel = bi.getRGB(h, g);
+				rgb[0] += ((pixel & 0xff0000) >> 16)*weight;
+				rgb[1] += ((pixel & 0xff00) >> 8)*weight;
+				rgb[2] += ((pixel & 0xff))*weight;
+				totalWeight+=weight;
+			}
+		}
+		int pixel = bi.getRGB(i, j);
+		weight=(float) 0.5;
+		totalWeight+=weight;
+		rgb[0] += ((pixel & 0xff0000) >> 16)*weight;
+		rgb[1] += ((pixel & 0xff00) >> 8)*weight;
+		rgb[2] += ((pixel & 0xff))*weight;
+		rgb[0]=(int) (rgb[0]/totalWeight);
+		rgb[1]=(int) (rgb[1]/totalWeight);
+		rgb[2]=(int) (rgb[2]/totalWeight);
+		
+		return rgb;
+	}
+	
+	public int[] getAvgColor(BufferedImage bi, int i,int j){
+		int[] rgb=new int[3];
+		
+		int pixel = bi.getRGB(i-1, j-1);
+		rgb[0] += ((pixel & 0xff0000) >> 16)*0.1;
+		rgb[1] += ((pixel & 0xff00) >> 8)*0.1;
+		rgb[2] += ((pixel & 0xff))*0.1;
+		
+		pixel = bi.getRGB(i-1, j);
+		rgb[0] += ((pixel & 0xff0000) >> 16)*0.15;
+		rgb[1] += ((pixel & 0xff00) >> 8)*0.15;
+		rgb[2] += ((pixel & 0xff))*0.15;
+		
+		pixel = bi.getRGB(i-1, j+1);
+		rgb[0] += ((pixel & 0xff0000) >> 16)*0.1;
+		rgb[1] += ((pixel & 0xff00) >> 8)*0.1;
+		rgb[2] += ((pixel & 0xff))*0.1;
+		
+		pixel = bi.getRGB(i, j-1);
+		rgb[0] += ((pixel & 0xff0000) >> 16)*0.15;
+		rgb[1] += ((pixel & 0xff00) >> 8)*0.15;
+		rgb[2] += ((pixel & 0xff))*0.15;
+		
+		pixel = bi.getRGB(i, j+1);
+		rgb[0] += ((pixel & 0xff0000) >> 16)*0.15;
+		rgb[1] += ((pixel & 0xff00) >> 8)*0.15;
+		rgb[2] += ((pixel & 0xff))*0.15;
+		
+		pixel = bi.getRGB(i+1, j-1);
+		rgb[0] += ((pixel & 0xff0000) >> 16)*0.1;
+		rgb[1] += ((pixel & 0xff00) >> 8)*0.1;
+		rgb[2] += ((pixel & 0xff))*0.1;
+		
+		pixel = bi.getRGB(i+1, j);
+		rgb[0] += ((pixel & 0xff0000) >> 16)*0.15;
+		rgb[1] += ((pixel & 0xff00) >> 8)*0.15;
+		rgb[2] += ((pixel & 0xff))*0.15;
+		
+		pixel = bi.getRGB(i+1, j+1);
+		rgb[0] += ((pixel & 0xff0000) >> 16)*0.1;
+		rgb[1] += ((pixel & 0xff00) >> 8)*0.1;
+		rgb[2] += ((pixel & 0xff))*0.1;
+		
+		return rgb;
 	}
 	
 	/*边缘提取
@@ -134,7 +218,7 @@ public class PicProcess {
 		PicProcess myObj = new PicProcess();
 		BufferedImage image=myObj.readImage("./image/flower1.jpg");
 		BufferedImage bi=myObj.avgImage(image);
-		myObj.createImage(bi, "./image/avgFlower1.png");
+		myObj.createImage(bi, "./image/avgFlower11.png");
 		System.out.println("the end of program");
 	}
 
