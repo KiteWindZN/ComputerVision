@@ -403,20 +403,157 @@ public class PicProcess {
 		return ret;
 	}
 
+	
+	public int[][] laplaceImage(BufferedImage image){
+		int width=image.getWidth();
+		int height=image.getHeight();
+		int[] arr=new int[9];
+		int[][] imageData=new int[height][width];
+		for(int i=1;i<width-1;i++){
+			for(int j=1;j<height-1;j++){
+				for(int k=0;k<3;k++){
+					arr[k]=image.getRGB(i-1, j+k-1);
+					arr[k+3]=image.getRGB(i, j+k-1);;
+					arr[k+6]=image.getRGB(i+1, j+k-1);	
+				}
+				//bi.setRGB(i, j, laplaceOperator(arr));
+				imageData[j][i]=laplaceOperator(arr);
+				
+			}
+		}
+		return imageData;
+	}
+	
+	public int laplaceOperator(int[] arr){
+		
+		int[] rgb=new int[3];
+		int[] operator={-1,-1,-1,-1,8,-1,-1,-1,-1};
+		for(int i=0;i<9;i++){
+			int[] rgbT=new int[3];
+			rgbT[0]=arr[i]& 0xff0000>>16;
+			rgb[0]= rgb[0]+ rgbT[0]*operator[i];
+		}
+		//rgb[0]=clamp(rgb[0]);
+		
+		//return new Color(rgb[0],rgb[0],rgb[0]).getRGB();
+		return rgb[0];
+	}
+	
+	public BufferedImage equalImage(BufferedImage image){
+		int width=image.getWidth();
+		int height=image.getHeight();
+		BufferedImage bi=new BufferedImage(width,height,image.getType());
+		for(int i=0;i<width;i++){
+			for(int j=0;j<height;j++){
+				int pixel1=image.getRGB(i, j);
+			    bi.setRGB(i, j, pixel1);
+			}
+		}
+		return bi;
+	}
+	
+	public BufferedImage addImage(BufferedImage image1,BufferedImage image2){
+		int width1=image1.getWidth();
+		int height1=image1.getHeight();
+		//int width2=image2.getWidth();
+		//int height2=image2.getHeight();
+		BufferedImage bi=new BufferedImage(width1,height1,image1.getType());
+		
+		//if(width1!=width2 || height1!=height2)
+			//return null;
+		
+		for(int i=0;i<width1;i++){
+			for(int j=0;j<height1;j++){
+				int pixel1=image1.getRGB(i, j);
+				int pixel2=image2.getRGB(i, j);
+				int[] rgb1=new int[3];
+				rgb1[0]=pixel1&0xff0000 >> 16;
+			    rgb1[1]=pixel1&0xff00 >> 8;
+			    rgb1[2]=pixel1&0xff;
+			    int rgb2=pixel2&0xff0000 >> 16;
+			    
+			    rgb1[0]+=rgb2; 
+			    rgb1[0]=clamp(rgb1[0]);
+	  
+			    bi.setRGB(i, j, new Color(rgb1[0],rgb1[0],rgb1[0]).getRGB());
+			}
+		}
+		return bi;
+	}
+	
+	public BufferedImage scaleImage(int[][] data){
+		int width=data[0].length;
+		int height=data.length;
+		BufferedImage bi=new BufferedImage(width,height,BufferedImage.TYPE_BYTE_GRAY);
+		int min=255;
+		int max=0;
+		for(int i=0;i<width;i++){
+			for(int j=0;j<height;j++){
+				int rgb=data[j][i];
+				
+				if(rgb<min)
+					min=rgb;
+				if(rgb>max)
+					max=rgb;
+			}
+		}
+		
+		int dis=max-min;
+		for(int i=0;i<width;i++){
+			for(int j=0;j<height;j++){
+				int rgb=data[j][i];
+				
+				int p=255*(rgb-min)/dis;
+				/*if(p>128)
+					p=p;
+				else p=0;*/
+				bi.setRGB(i, j, new Color(p,p,p).getRGB());
+			}
+		}
+		return bi;
+	}
+	
+	public BufferedImage mat2Image(int[][] data){
+		int width=data[0].length;
+		int height=data.length;
+		BufferedImage bi=new BufferedImage(width,height,BufferedImage.TYPE_BYTE_GRAY);
+		
+		
+		for(int i=0;i<width;i++){
+			for(int j=0;j<height;j++){
+				int rgb=clamp(data[j][i]);
+				
+				bi.setRGB(i, j, new Color(rgb,rgb,rgb).getRGB());
+			}
+		}
+		return bi;
+	}
+	
+	public BufferedImage calLaplaceImage(BufferedImage image){
+		int[][] imageData=laplaceImage(image);
+		int width=image.getWidth();
+		int height=image.getHeight();
+		//BufferedImage bi=mat2Image(imageData);
+		BufferedImage bi=scaleImage(imageData);
+		BufferedImage res=new BufferedImage(width,height,image.TYPE_BYTE_GRAY);
+		res=addImage(image,bi);
+		//res=equalImage(image);
+		return res;
+	}
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		PicProcess myObj = new PicProcess();
-		BufferedImage image = myObj.readImage("./image/grayLena.png");
+		BufferedImage image = myObj.readImage("./image/lena.jpg");
 		int[][] sobelX = { { -1, 0, +1 }, { -2, 0, +2 }, { -1, 0, +1 } };
 		int[][] sobelY = { { -1, -2, -1 }, { 0, 0, 0 }, { +1, +2, +1 } };
 		int[][] sobelX1 = { { -3, 0, +3 }, { -10, 0, +10 }, { -3, 0, +3 } };
 		int[][] sobelY1 = { { -3, -10, -3 }, { 0, 0, 0 }, { +3, +10, +3 } };
-		BufferedImage bi = myObj.gradXandY(image, sobelX, sobelY);
-		myObj.createImage(bi, "./image/gradLenaXandY2.png");
-		bi = myObj.gradX(image, sobelX);
-		myObj.createImage(bi, "./image/gradLenaX2.png");
-		bi = myObj.gradY(image, sobelY);
-		myObj.createImage(bi, "./image/gradLenaY2.png");
+		int[][] sobelX2 = { { -1, -1, -1 }, { -1, 8, -1 }, { -1, -1, -1 } };
+		int[][] sobelY2 = { { -1, -2, -1 }, { 0, 0, 0 }, { +1, +2, +1 } };
+		//image=myObj.createGrayImage(image);
+		BufferedImage bi=myObj.calLaplaceImage(image);
+		//BufferedImage bi=myObj.gradX(image, sobelX2);
+		myObj.createImage(bi,"./image/lenaLaplace1.png");
 		System.out.println("the end of program");
 	}
 
