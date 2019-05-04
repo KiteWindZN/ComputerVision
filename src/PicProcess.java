@@ -531,7 +531,55 @@ public class PicProcess {
 		return bi;
 	}
 	
+	public void printHoughList(List<Hough> list){
+		for(int i=0;i<list.size();i++){
+			System.out.println("ro: "+list.get(i).ro+" , angle: "+list.get(i).angle);
+		}
+	}
 	
+	public List<Hough> mergeLine(List<Hough> list){
+		List<Hough> resList=new ArrayList<Hough>();
+		int i=1;
+		int ro=list.get(0).ro;
+		int angle=list.get(0).angle;
+		List<Hough> tmpList=new ArrayList<Hough>();
+		tmpList.add(list.get(0));
+		while(i<list.size()){
+			int tmpRo=list.get(i).ro;
+			int tmpAngle=list.get(i).angle;
+			if(Math.abs(ro-tmpRo)<=10&&Math.abs(angle-tmpAngle)<=3){
+				tmpList.add(list.get(i));
+			}else{
+				if(tmpList.size()<=3){
+					for(int j=0;j<tmpList.size();j++){
+						resList.add(tmpList.get(j));
+					}
+				}else{
+					int avgRo=0;
+					int avgAngle=0;
+					
+					for(int j=0;j<tmpList.size();j++){
+						avgRo+=tmpList.get(j).ro;
+						avgAngle+=tmpList.get(j).angle;
+					}
+					avgRo=avgRo/tmpList.size();
+					avgAngle=avgAngle/tmpList.size();
+					
+					resList.add(new Hough(avgRo,avgAngle));
+					resList.add(new Hough(avgRo+1,avgAngle));
+					if(avgRo==0)
+						resList.add(new Hough(avgRo+2,avgAngle));
+					else resList.add(new Hough(avgRo-1,avgAngle));
+				}
+				tmpList.clear();
+				tmpList.add(list.get(i));
+				ro=list.get(i).ro;
+				angle=list.get(i).angle;
+			}
+			i++;
+		}
+		return resList;
+	}
 	public void houghTransformLine(BufferedImage image) throws IOException{
 		int width=image.getWidth();
 		int height=image.getHeight();
@@ -561,7 +609,13 @@ public class PicProcess {
 			}
 		}
 		
-		List<Hough> peeks=peakHough(hist,70);
+		List<Hough> tmpPeeks=peakHough(hist,70);
+		printHoughList(tmpPeeks);
+		List<Hough> peeks=mergeLine(tmpPeeks);
+		System.out.println();
+		System.out.println();
+		System.out.println();
+		printHoughList(peeks);
 		for(int k=0;k<peeks.size();k++){
 			double resTheta=peeks.get(k).angle*Math.PI/(theta*2);
 			resTheta=peeks.get(k).angle*Math.PI/(theta*2);
