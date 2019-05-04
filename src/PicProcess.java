@@ -2,7 +2,9 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriter;
@@ -529,6 +531,125 @@ public class PicProcess {
 		return bi;
 	}
 	
+	
+	public void houghTransformLine(BufferedImage image) throws IOException{
+		int width=image.getWidth();
+		int height=image.getHeight();
+		int[][] data=new int[height][width];
+		for(int i=0;i<width;i++){
+			for(int j=0;j<height;j++){
+				int pixel=image.getRGB(i, j);
+				data[j][i]=pixel&0xff;
+			}
+		}
+		
+		int ro=(int)Math.sqrt(height*height+width*width);
+		int theta=90;
+		int[][] hist=new int[ro][theta+1];
+		
+		for(int k=0;k<=theta;k++){
+			for(int i=0;i<width;i++){
+				for(int j=0;j<height;j++){
+					if(data[j][i]!=0){
+						//此处存在问题
+						double segma=k*Math.PI/(theta*2);
+						segma=k*Math.PI/(theta*2);
+						int rho=(int)(i*Math.cos(segma))+(int)(j*Math.sin(segma));
+						hist[rho][k]++;
+					}
+				}
+			}
+		}
+		
+		List<Hough> peeks=peakHough(hist,70);
+		for(int k=0;k<peeks.size();k++){
+			double resTheta=peeks.get(k).angle*Math.PI/(theta*2);
+			resTheta=peeks.get(k).angle*Math.PI/(theta*2);
+			for(int i=0;i<width;i++){
+				for(int j=0;j<height;j++){
+					int rho=(int)(i*Math.cos(resTheta)+j*Math.sin(resTheta));
+					if(data[j][i]!=0&&rho==peeks.get(k).ro){
+						data[j][i]=setRed();
+					}else{
+						if(data[j][i]>255||data[j][i]<0){
+							//System.out.println("+++++out: "+data[j][i]);
+						}
+						data[j][i]=setColor(data[j][i]);
+					}
+				}
+			}
+		}
+		
+		mat2Image("./image/houghapple_2.png",data);
+	}
+	
+	public void houghTransformCircle(){}
+	
+	
+	public void houghTransformCircleNoR(){
+		
+	}
+	
+	public int[][] createHoughMat(BufferedImage image,int startSeta,int endSeta){
+		int n=10;
+		int m=10;
+		int[][] mat=new int[n][m];
+		return mat;
+	}
+	public List<Hough> peakHough(int[][] mat,int num){
+		List<Hough> resList=new ArrayList<Hough>();
+		int width=mat[0].length;
+		int height=mat.length;
+		int max=0;
+		for(int i=0;i<height;i++){
+			for(int j=0;j<width;j++){
+				if(max<mat[i][j]){
+					max=mat[i][j];
+				}
+			}
+		}
+		
+		for(int i=0;i<height;i++){
+			for(int j=0;j<width;j++){
+				if(mat[i][j]>((double)max*num/100.0)){
+					resList.add(new Hough(i,j));
+				}
+			}
+		}
+		return resList;
+	}
+	
+	public BufferedImage drawHoughLine(){
+		BufferedImage bi=null;
+		return bi;
+	}
+	
+	public BufferedImage drawHoughCircle(){
+		BufferedImage bi=null;
+		return bi;
+	}
+	
+	
+	public int setRed(){
+		return 0xff0000;
+	}
+	
+	public int setColor(int num){
+		return (255<<24)|(num<<16)|(num<<8)|num;
+		//return new Color(num&0xff0000>>16,num&0xff00>>8,num&0xff).getRGB();
+	}
+	public void mat2Image(String fileName,int[][] mat) throws IOException{
+		int width=mat[0].length;
+		int height=mat.length;
+		BufferedImage bi=new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
+		for(int i=0;i<width;i++){
+			for(int j=0;j<height;j++){
+				bi.setRGB(i, j, mat[j][i]);
+			}
+		}
+		
+		createImage(bi,fileName);
+	}
 	public BufferedImage calLaplaceImage(BufferedImage image){
 		int[][] imageData=laplaceImage(image);
 		int width=image.getWidth();
@@ -543,7 +664,7 @@ public class PicProcess {
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		PicProcess myObj = new PicProcess();
-		BufferedImage image = myObj.readImage("./image/lena.jpg");
+		BufferedImage image = myObj.readImage("./image/apple1.png");
 		int[][] sobelX = { { -1, 0, +1 }, { -2, 0, +2 }, { -1, 0, +1 } };
 		int[][] sobelY = { { -1, -2, -1 }, { 0, 0, 0 }, { +1, +2, +1 } };
 		int[][] sobelX1 = { { -3, 0, +3 }, { -10, 0, +10 }, { -3, 0, +3 } };
@@ -551,9 +672,10 @@ public class PicProcess {
 		int[][] sobelX2 = { { -1, -1, -1 }, { -1, 8, -1 }, { -1, -1, -1 } };
 		int[][] sobelY2 = { { -1, -2, -1 }, { 0, 0, 0 }, { +1, +2, +1 } };
 		//image=myObj.createGrayImage(image);
-		BufferedImage bi=myObj.calLaplaceImage(image);
+		//BufferedImage bi=myObj.calLaplaceImage(image);
 		//BufferedImage bi=myObj.gradX(image, sobelX2);
-		myObj.createImage(bi,"./image/lenaLaplace1.png");
+		//myObj.createImage(bi,"./image/apple1.png");
+		myObj.houghTransformLine(image);
 		System.out.println("the end of program");
 	}
 
