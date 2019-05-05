@@ -9,7 +9,7 @@ public class HoughTransform {
 
 	public void printHoughList(List<Hough> list){
 		for(int i=0;i<list.size();i++){
-			System.out.println("ro: "+list.get(i).ro+" , angle: "+list.get(i).angle);
+			System.out.println(i+" :  "+"ro: "+list.get(i).ro+" , angle: "+list.get(i).angle);
 		}
 	}
 	
@@ -93,9 +93,9 @@ public class HoughTransform {
 		
 		int ro=(int)Math.sqrt(height*height+width*width);
 		int theta=90;
-		int[][] hist=new int[ro][theta+1];
+		int[][] hist=new int[ro][theta];
 		
-		for(int k=0;k<=theta;k++){
+		for(int k=0;k<theta;k++){
 			for(int i=0;i<width;i++){
 				for(int j=0;j<height;j++){
 					if(data[j][i]!=0){
@@ -109,25 +109,23 @@ public class HoughTransform {
 			}
 		}
 		
+		//List<Hough> tmpPeeks=peakHough(hist,90);
 		List<Hough> tmpPeeks=peakHough(hist,70);
 		printHoughList(tmpPeeks);
 		List<Hough> peeks=mergeLine(tmpPeeks);
 		System.out.println();
 		System.out.println();
 		System.out.println();
-		printHoughList(peeks);
+		//printHoughList(peeks);
 		for(int k=0;k<peeks.size();k++){
 			double resTheta=peeks.get(k).angle*Math.PI/(theta*2);
-			resTheta=peeks.get(k).angle*Math.PI/(theta*2);
+			
 			for(int i=0;i<width;i++){
 				for(int j=0;j<height;j++){
 					int rho=(int)(i*Math.cos(resTheta)+j*Math.sin(resTheta));
 					if(data[j][i]!=0&&rho==peeks.get(k).ro){
 						data[j][i]=setRed();
 					}else{
-						if(data[j][i]>255||data[j][i]<0){
-							//System.out.println("+++++out: "+data[j][i]);
-						}
 						data[j][i]=setColor(data[j][i]);
 					}
 				}
@@ -137,11 +135,63 @@ public class HoughTransform {
 		mat2Image("./image/houghapple_2.png",data);
 	}
 	
-	public void houghTransformCircle(){}
+	public void houghTransformCircleR(){}
 	
 	
-	public void houghTransformCircleNoR(){
+	public void houghTransformCircleNoR(BufferedImage image) throws IOException{
+		int width=image.getWidth();
+		int height=image.getHeight();
+		int maxR=(int) Math.sqrt(width*width+height*height);
+		int theta=360;
+		int[][][] hist=new int[maxR][width][height];
+		int[][] data=new int[width][height];
 		
+		for(int i=0;i<width;i++){
+			for(int j=0;j<height;j++){
+				data[i][j]=image.getRGB(i, j)&0xff;
+			}
+		}
+		
+		for(int r=1;r<50;r++){
+			for(int i=0;i<width/4;i++){
+				for(int j=0;j<height/4;j++){
+					for(int angle=0;angle<theta;angle++){
+						double t=angle*Math.PI/180;
+						int x=(int) (i+r*Math.cos(t));
+						int y=(int) (j+r*Math.sin(t));
+						
+						if(x>=0&&x<width&&y>=0&&y<height){
+							
+							if(data[x][y]!=0)
+								hist[r][x][y]++;
+						}
+					}
+				}
+			}
+			if(r%10==0){
+				System.out.println(r);
+			}
+		}
+		System.out.println("++++++1");
+		List<HoughCircle> peakCircle=peakHoughCircle(hist, 98);
+		System.out.println("++++++2: "+peakCircle.size());
+		for(int k=0;k<peakCircle.size();k++){
+			int r=peakCircle.get(k).r;
+			int x=peakCircle.get(k).x;
+			int y=peakCircle.get(k).y;
+			
+			for(int i=0;i<width/4;i++){
+				for(int j=0;j<height/4;j++){
+					int tmpR=(int)Math.sqrt((i-x)*(i-x)+(j-y)*(j-y));
+					if(tmpR==r&&data[i][j]!=0){
+						data[i][j]=setRed();
+					}else{
+						data[i][j]=setColor(data[i][j]);
+					}
+				}
+			}
+		}
+		this.mat2Image("./image/houghCircle.png", data);
 	}
 	
 	public int[][] createHoughMat(BufferedImage image,int startSeta,int endSeta){
@@ -167,6 +217,33 @@ public class HoughTransform {
 			for(int j=0;j<width;j++){
 				if(mat[i][j]>((double)max*num/100.0)){
 					resList.add(new Hough(i,j));
+				}
+			}
+		}
+		return resList;
+	}
+	
+	public List<HoughCircle> peakHoughCircle(int[][][] mat,int num){
+		int max=0;
+		List<HoughCircle> resList=new ArrayList<HoughCircle>();
+		int ro=mat.length;
+		int width=mat[0].length;
+		int height=mat[0][0].length;
+		
+		for(int r=0;r<ro;r++){
+			for(int i=0;i<width;i++){
+				for(int j=0;j<height;j++){
+					if(max<mat[r][i][j])
+						max=mat[r][i][j];
+				}
+			}
+		}
+		
+		for(int r=0;r<ro;r++){
+			for(int i=0;i<width;i++){
+				for(int j=0;j<height;j++){
+					if(mat[r][i][j]>(int)(max*1.0*num/100))
+						resList.add(new HoughCircle(r,i,j));
 				}
 			}
 		}
@@ -208,9 +285,9 @@ public class HoughTransform {
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		HoughTransform myObj=new HoughTransform();
-		BufferedImage image = BaseImage.readImage("./image/apple1.png");
-		myObj.houghTransformLine(image);
-		
+		BufferedImage image = BaseImage.readImage("./image/123_2.png");
+		//myObj.houghTransformLine(image);
+		myObj.houghTransformCircleNoR(image);
 	}
 
 }

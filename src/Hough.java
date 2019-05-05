@@ -1,6 +1,6 @@
 
 public class Hough {
-
+    //极坐标的半径与角度
 	int ro;
 	int angle;
 	

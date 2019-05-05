@@ -9,8 +9,6 @@ public class PicProcess {
 	int row = 1;
 	int col = 1;
 
-	
-
 	/*
 	 * 图像二值化
 	 */
@@ -23,11 +21,12 @@ public class PicProcess {
 		float[] rgb = new float[3];
 		for (int i = 0; i < width; i++) {
 			for (int j = 0; j < height; j++) {
-				int pixel = bi.getRGB(i, j);
+				int pixel = image.getRGB(i, j);
 				rgb[0] = (pixel & 0xff0000) >> 16;
 				rgb[1] = (pixel & 0xff00) >> 8;
 				rgb[2] = (pixel & 0xff);
 				float avg = (rgb[0] + rgb[1] + rgb[2]) / 3;
+				
 				if (avg < this.threadhold) {
 					bi.setRGB(i, j, black);
 				} else {
@@ -520,7 +519,7 @@ public class PicProcess {
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		PicProcess myObj = new PicProcess();
-		BufferedImage image = BaseImage.readImage("./image/apple1.png");
+		BufferedImage image = BaseImage.readImage("./image/123_1.png");
 		int[][] sobelX = { { -1, 0, +1 }, { -2, 0, +2 }, { -1, 0, +1 } };
 		int[][] sobelY = { { -1, -2, -1 }, { 0, 0, 0 }, { +1, +2, +1 } };
 		int[][] sobelX1 = { { -3, 0, +3 }, { -10, 0, +10 }, { -3, 0, +3 } };
@@ -529,9 +528,11 @@ public class PicProcess {
 		int[][] sobelY2 = { { -1, -2, -1 }, { 0, 0, 0 }, { +1, +2, +1 } };
 		//image=myObj.createGrayImage(image);
 		//BufferedImage bi=myObj.calLaplaceImage(image);
-		//BufferedImage bi=myObj.gradX(image, sobelX2);
-		//BaseImage.createImage(bi,"./image/apple1.png");
+		//BufferedImage bi=myObj.gradXandY(image, sobelX1,sobelY1);
+		BufferedImage bi=myObj.binaryImage(image);
+		BaseImage.createImage(bi,"./image/123_2.png");
 		//myObj.houghTransformLine(image);
+		
 		System.out.println("the end of program");
 	}
 
