@@ -113,7 +113,7 @@ public class HoughTransform {
 		}
 
 		// List<Hough> tmpPeeks=peakHough(hist,90);
-		List<Hough> tmpPeeks = peakHough(hist, 80);
+		List<Hough> tmpPeeks = peakHough(hist, 70);
 		printHoughList(tmpPeeks);
 		List<Hough> peeks = mergeLine(tmpPeeks);
 		System.out.println();
@@ -313,8 +313,8 @@ public class HoughTransform {
 		// TODO Auto-generated method stub
 		HoughTransform myObj = new HoughTransform();
 		BufferedImage image = BaseImage.readImage("./image/123_2.png");
-		// myObj.houghTransformLine(image);
-		myObj.houghTransformCircleNoR(image);
+	    myObj.houghTransformLine(image);
+		//myObj.houghTransformCircleNoR(image);
 	}
 
 }
